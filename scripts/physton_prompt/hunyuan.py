@@ -7,17 +7,69 @@ from scripts.physton_prompt.get_lang import get_lang
 warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', message='.*token_type_ids.*')
 
+# 支持的 Hy-MT2 模型列表
+SUPPORTED_MODELS = {
+    "Tencent-Hunyuan/Hy-MT2-1.8B": {
+        "name": "Hy-MT2-1.8B",
+        "repo_id": "Tencent-Hunyuan/Hy-MT2-1.8B",
+        "local_path": "Hy-MT2-1.8B",
+        "description": "基础版，适合低显存环境"
+    },
+    "Tencent-Hunyuan/Hy-MT2-7B-FP8": {
+        "name": "Hy-MT2-7B-FP8",
+        "repo_id": "Tencent-Hunyuan/Hy-MT2-7B-FP8",
+        "local_path": "Hy-MT2-7B-FP8",
+        "description": "7B 版本，FP8 量化，平衡性能和质量"
+    },
+    "Tencent-Hunyuan/Hy-MT2-7B": {
+        "name": "Hy-MT2-7B",
+        "repo_id": "Tencent-Hunyuan/Hy-MT2-7B",
+        "local_path": "Hy-MT2-7B",
+        "description": "7B 版本，全精度，更高质量"
+    },
+    "Tencent-Hunyuan/Hy-MT2-30B-A3B": {
+        "name": "Hy-MT2-30B-A3B",
+        "repo_id": "Tencent-Hunyuan/Hy-MT2-30B-A3B",
+        "local_path": "Hy-MT2-30B-A3B",
+        "description": "30B 版本，A3B 量化，适合高端显卡"
+    },
+    "Tencent-Hunyuan/Hy-MT2-30B-A3B-FP8": {
+        "name": "Hy-MT2-30B-A3B-FP8",
+        "repo_id": "Tencent-Hunyuan/Hy-MT2-30B-A3B-FP8",
+        "local_path": "Hy-MT2-30B-A3B-FP8",
+        "description": "30B 版本，A3B+FP8 量化，最优性能"
+    }
+}
+
 model = None
 tokenizer = None
-model_name = "Tencent-Hunyuan/Hy-MT2-1.8B"
+current_model_key = "Tencent-Hunyuan/Hy-MT2-1.8B"
 # 模型目录设置在 webui 的 models 目录下
 # 从 scripts/physton_prompt/ 到 webui/models 需要 4 个 ../
 cache_dir = os.path.normpath(os.path.dirname(os.path.abspath(__file__)) + '/../../../../models')
-model_path = os.path.join(cache_dir, "Hy-MT2-1.8B")
 loading = False
 
-def initialize(reload=False):
-    global model, tokenizer, model_name, cache_dir, model_path, loading
+def get_supported_models():
+    """获取支持的模型列表"""
+    return list(SUPPORTED_MODELS.keys())
+
+def get_model_info(model_key):
+    """获取模型信息"""
+    return SUPPORTED_MODELS.get(model_key, SUPPORTED_MODELS["Tencent-Hunyuan/Hy-MT2-1.8B"])
+
+def initialize(model_key=None, reload=False):
+    global model, tokenizer, current_model_key, cache_dir, loading
+    
+    # 使用指定的模型或当前模型
+    if model_key is None:
+        model_key = current_model_key
+    current_model_key = model_key
+    
+    # 获取模型信息
+    model_info = get_model_info(model_key)
+    model_name = model_info["name"]
+    repo_id = model_info["repo_id"]
+    local_model_path = os.path.join(cache_dir, model_info["local_path"])
     
     # 延迟导入 torch，只在需要时导入
     import torch
@@ -29,24 +81,21 @@ def initialize(reload=False):
         if model is None or tokenizer is None:
             raise Exception('error')
         return
-    if not reload and model is not None:
+    if not reload and model is not None and current_model_key == model_key:
         return
     loading = True
     model = None
     tokenizer = None
 
     # 检查本地模型是否存在
-    local_model_path = model_path
-    model_file = os.path.join(local_model_path, "pytorch_model.bin")
     config_file = os.path.join(local_model_path, "config.json")
     
     if os.path.exists(local_model_path) and os.path.exists(config_file):
         model_name = local_model_path
         print(f'[sd-webui-prompt-all-in-one] Loading local model from {local_model_path}...')
     else:
-        print(f'[sd-webui-prompt-all-in-one] Local model not found at {local_model_path}, will download from ModelScope...')
-        # 如果本地不存在，尝试从 ModelScope 下载
-        model_name = "Tencent-Hunyuan/Hy-MT2-1.8B"
+        print(f'[sd-webui-prompt-all-in-one] Local model not found at {local_model_path}, will download from HuggingFace...')
+        model_name = repo_id
 
     try:
         from transformers import AutoTokenizer, AutoModelForCausalLM
