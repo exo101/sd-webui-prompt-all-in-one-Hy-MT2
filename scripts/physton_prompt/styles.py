@@ -2,7 +2,7 @@ import os
 from scripts.physton_prompt.storage import Storage
 
 
-styles_path = os.path.dirname(os.path.abspath(__file__)) + '/../../styles'
+styles_path = os.path.dirname(os.path.abspath(__file__)) + '/../../styles/styles'
 styles_path = os.path.normpath(styles_path)
 
 
