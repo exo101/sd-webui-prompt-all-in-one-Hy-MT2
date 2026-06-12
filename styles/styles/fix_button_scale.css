@@ -1,0 +1,38 @@
+/* Fix for button scaling issue */
+/* This file overrides the problematic CSS variables with hardcoded values */
+
+.hover-scale-120 {
+    animation: all 0.3s !important;
+}
+
+.hover-scale-120:hover {
+    transform: scale(1.2) !important;
+}
+
+.hover-scale-140 {
+    animation: all 0.3s !important;
+}
+
+.hover-scale-140:hover {
+    transform: scale(1.4) !important;
+}
+
+/* Additional fixes for any unexpected scaling */
+.physton-prompt .hover-scale-120,
+.physton-prompt .hover-scale-140,
+.extend-btn-item .hover-scale-120,
+.extend-btn-item .hover-scale-140 {
+    transform: none !important;
+}
+
+.physton-prompt .hover-scale-120:hover,
+.physton-prompt .hover-scale-140:hover,
+.extend-btn-item .hover-scale-120:hover,
+.extend-btn-item .hover-scale-140:hover {
+    transform: scale(1.2) !important;
+}
+
+.physton-prompt .hover-scale-140:hover,
+.extend-btn-item .hover-scale-140:hover {
+    transform: scale(1.4) !important;
+}
